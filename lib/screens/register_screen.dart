@@ -287,7 +287,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
   String? _validateCedula(String? v) {
     if (v == null || v.trim().isEmpty) return 'La cédula es obligatoria';
-    if (!RegExp(r'^\d{10}$').hasMatch(v.trim())) return 'Debe tener 10 dígitos numéricos';
+    final c = v.trim();
+    if (!RegExp(r'^\d{10}$').hasMatch(c)) return 'Debe tener exactamente 10 dígitos';
+    final provincia = int.parse(c.substring(0, 2));
+    if (provincia < 1 || provincia > 24) return 'Cédula inválida (provincia no válida)';
+    final tercero = int.parse(c[2]);
+    if (tercero >= 6) return 'Cédula inválida';
+    // Algoritmo de verificación (dígito verificador)
+    final coefs = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+    int suma = 0;
+    for (int i = 0; i < 9; i++) {
+      int val = int.parse(c[i]) * coefs[i];
+      if (val > 9) val -= 9;
+      suma += val;
+    }
+    final verificador = (10 - (suma % 10)) % 10;
+    if (verificador != int.parse(c[9])) return 'Cédula ecuatoriana no válida';
     return null;
   }
   String? _validateTelefono(String? v) {

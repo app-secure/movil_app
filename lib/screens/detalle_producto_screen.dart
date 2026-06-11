@@ -57,7 +57,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
         const SizedBox(width: 8),
         Expanded(child: Text('$_cantidad × ${_producto!['nombre']} añadido al carrito')),
       ]),
-      backgroundColor: const Color(0xFF2E7D32),
+      backgroundColor: kGreen,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       duration: const Duration(seconds: 2),
@@ -160,10 +160,10 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: hayStock ? const Color(0xFF2E7D32).withValues(alpha: 0.1) : kError.withValues(alpha: 0.1),
+                          color: hayStock ? kGreen.withValues(alpha: 0.1) : kError.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: hayStock ? const Color(0xFF2E7D32).withValues(alpha: 0.3) : kError.withValues(alpha: 0.3),
+                            color: hayStock ? kGreen.withValues(alpha: 0.3) : kError.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Text(
@@ -171,7 +171,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: hayStock ? const Color(0xFF2E7D32) : kError,
+                            color: hayStock ? kGreen : kError,
                           ),
                         ),
                       ),

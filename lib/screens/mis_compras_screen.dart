@@ -129,13 +129,13 @@ class _CompraCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                // Ícono de compra
+                // �?cono de compra
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
                     color: esAbierta
-                        ? const Color(0xFF2E7D32).withValues(alpha: 0.1)
+                        ? kGreen.withValues(alpha: 0.1)
                         : kTeal.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -143,7 +143,7 @@ class _CompraCard extends StatelessWidget {
                     esAbierta
                         ? Icons.shopping_bag_rounded
                         : Icons.shopping_bag_outlined,
-                    color: esAbierta ? const Color(0xFF2E7D32) : kTeal,
+                    color: esAbierta ? kGreen : kTeal,
                     size: 22,
                   ),
                 ),
@@ -176,7 +176,7 @@ class _CompraCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
-                              color: esAbierta ? const Color(0xFF2E7D32) : kTeal,
+                              color: esAbierta ? kGreen : kTeal,
                             ),
                           ),
                         ],
@@ -203,7 +203,7 @@ class _CompraCard extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
+                    backgroundColor: kGreen,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -243,7 +243,7 @@ class _EstadoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final upper = estado.toUpperCase();
     final color = switch (upper) {
-      'ABIERTA'        => const Color(0xFF2E7D32),
+      'ABIERTA'        => kGreen,
       'PENDIENTE_PAGO' => const Color(0xFFF9A825),
       'ANULADA'        => kError,
       _                => kTextGrey,

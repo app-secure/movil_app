@@ -60,7 +60,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Perfil actualizado correctamente'),
-          backgroundColor: Color(0xFF2E7D32),
+          backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -133,7 +133,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                       label: 'Nombre completo',
                       icon: Icons.person_outline_rounded,
                       keyboard: TextInputType.name,
-                      formatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
+                      formatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Záéíóú�?É�?ÓÚñÑ\s]'))],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'El nombre es obligatorio';
                         if (v.trim().length < 3) return 'Mínimo 3 caracteres';

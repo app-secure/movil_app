@@ -152,9 +152,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
                                 _FilaPerfil(
                                   icon: Icons.toggle_on_outlined,
                                   label: 'Estado',
-                                  valor: (_perfil!['estado'] ?? 'activo').toString(),
+                                  valor: (_perfil!['estado'] == 'activo' || _perfil!['estado'] == true) ? 'Activo' : 'Inactivo',
                                   valorColor: (_perfil!['estado'] == 'activo' || _perfil!['estado'] == true)
-                                      ? const Color(0xFF2E7D32)
+                                      ? kGreen
                                       : kError,
                                 ),
                               ],

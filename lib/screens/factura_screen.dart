@@ -1015,7 +1015,7 @@ class _FacturaHtmlModalState extends State<_FacturaHtmlModal> {
                   'Estado SRI',
                   sri['estado']?.toString() ?? 'PENDIENTE',
                   valorColor: (sri['estado'] == 'AUTORIZADO')
-                      ? const Color(0xFF2E7D32)
+                      ? kGreen
                       : Colors.orange,
                 ),
                 _Fila(

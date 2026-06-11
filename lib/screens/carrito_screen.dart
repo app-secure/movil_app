@@ -70,10 +70,10 @@ class _CarritoScreenState extends State<CarritoScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+              color: kGreen.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 22),
+            child: const Icon(Icons.check_circle, color: kGreen, size: 22),
           ),
           const SizedBox(width: 10),
           const Text('¡Pago exitoso!',
@@ -88,15 +88,15 @@ class _CarritoScreenState extends State<CarritoScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
+              color: kGreenLight,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
-              const Icon(Icons.receipt_long_outlined, color: Color(0xFF2E7D32), size: 16),
+              const Icon(Icons.receipt_long_outlined, color: kGreen, size: 16),
               const SizedBox(width: 8),
               Text(
                 'Compra #$numeroFactura',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF2E7D32)),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kGreen),
               ),
             ]),
           ),
@@ -113,7 +113,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
+              backgroundColor: kGreen,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -196,12 +196,70 @@ class _CarritoScreenState extends State<CarritoScreen> {
       };
     } catch (e) {
       if (!mounted) return null;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error: $e'),
-        backgroundColor: kError,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ));
+      final mensaje = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      final esStockInsuficiente = mensaje.toLowerCase().contains('stock');
+      showDialog(
+        context: context,
+        useRootNavigator: true,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: kError.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+              child: Icon(esStockInsuficiente ? Icons.people_outline_rounded : Icons.error_outline_rounded, color: kError, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(esStockInsuficiente ? 'Sin stock disponible' : 'No se pudo completar', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (esStockInsuficiente) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: kError.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: kError.withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: kError, size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Otro usuario compró el último artículo justo antes que tú. El stock ya no está disponible.',
+                          style: TextStyle(fontSize: 13, color: kError, height: 1.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Te sugerimos explorar otros productos similares en el catálogo.',
+                  style: TextStyle(fontSize: 13, color: kTextGrey, height: 1.5),
+                ),
+              ] else
+                Text(mensaje, style: const TextStyle(fontSize: 14, color: kTextGrey, height: 1.5)),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kError,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
       return null;
     } finally {
       if (mounted) setState(() => _procesando = false);
@@ -608,7 +666,7 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
               TextFormField(
                 controller: _nombreCtrl,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Záéíóú�?É�?ÓÚñÑ\s]')),
                 ],
                 decoration: InputDecoration(
                   hintText: 'Razón social o nombre completo',

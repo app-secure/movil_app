@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../core/api_service.dart';
 import 'register_screen.dart';
-import 'productos_screen.dart';
+import 'auth_wrapper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const ProductosScreen()),
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
       );
     } catch (e) {
       setState(() { _error = e.toString(); });
@@ -169,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (_error != null) ...[
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(color: kError.withOpacity(0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kError.withOpacity(0.3))),
+                              decoration: BoxDecoration(color: kError.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kError.withValues(alpha: 0.3))),
                               child: Row(children: [
                                 const Icon(Icons.error_outline, color: kError, size: 16),
                                 const SizedBox(width: 8),

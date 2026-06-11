@@ -145,7 +145,7 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
         if (!silencioso) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Factura enviada a tu correo registrado'),
-            backgroundColor: Color(0xFF2E7D32),
+            backgroundColor: kGreen,
             behavior: SnackBarBehavior.floating,
           ));
         }
@@ -418,22 +418,22 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
+              color: kGreenLight,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFC8E6C9)),
             ),
             child: Column(children: [
               const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.check_circle_rounded, color: Color(0xFF2E7D32), size: 22),
+                Icon(Icons.check_circle_rounded, color: kGreen, size: 22),
                 SizedBox(width: 8),
                 Text('Pago Realizado',
-                    style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF2E7D32), fontSize: 15)),
+                    style: TextStyle(fontWeight: FontWeight.w800, color: kGreen, fontSize: 15)),
               ]),
               const SizedBox(height: 14),
               if (_loadingQr)
                 const SizedBox(
                   height: 150,
-                  child: Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+                  child: Center(child: CircularProgressIndicator(color: kGreen)),
                 )
               else if (_qrBytes != null)
                 Container(
@@ -463,7 +463,7 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
               const SizedBox(height: 12),
               const Text(
                 'Tu pago ha sido procesado correctamente y la factura legal fue enviada al correo.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32), fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 12, color: kGreen, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
             ]),
@@ -650,7 +650,7 @@ class _EstadoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, bg) = switch (estado) {
-      'ABIERTA'       => (const Color(0xFF2E7D32), const Color(0xFFE8F5E9)),
+      'ABIERTA'       => (kGreen, kGreenLight),
       'PENDIENTE_PAGO'=> (const Color(0xFFF9A825), const Color(0xFFFFF8E1)),
       'ANULADA'       => (kError, const Color(0xFFFFEBEE)),
       _               => (kTextGrey, const Color(0xFFF5F5F5)),

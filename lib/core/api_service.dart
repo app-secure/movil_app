@@ -17,8 +17,8 @@ class ApiService {
       return customUrl;
     }
     final defaultUrl = (!kIsWeb && Platform.isAndroid)
-        ? 'http://10.0.2.2:5020'
-        : 'http://localhost:5020';
+        ? 'http://10.175.119.60'
+        : 'http://10.175.119.60';
     _apiBaseUrl = defaultUrl;
     return defaultUrl;
   }
@@ -43,7 +43,12 @@ class ApiService {
     return prefs.getString('token');
   }
 
-  static Future<void> saveSession(String token, String idUsuario, String email, String rol) async {
+  static Future<void> saveSession(
+    String token,
+    String idUsuario,
+    String email,
+    String rol,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     await prefs.setString('idUsuario', idUsuario);
@@ -59,6 +64,24 @@ class ApiService {
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  static Future<Map<String, dynamic>> getMiEstado() async {
+    final token = await getToken();
+    if (token == null || token.isEmpty) throw 'Sin sesión';
+    final res = await _get('/api/usuarios/mi-estado', token: token);
+    final data = jsonDecode(res.body);
+    if (res.statusCode == 200) return data;
+    throw data['mensaje'] ?? 'Error al verificar estado';
+  }
+
+  static Future<bool> isUsuarioActivo() async {
+    try {
+      final data = await getMiEstado();
+      return data['estado'] == true;
+    } catch (_) {
+      return true; // sin conexión: no bloquear
+    }
   }
 
   static Map<String, String> _headers({String? token}) => {
@@ -80,33 +103,57 @@ class ApiService {
         .timeout(const Duration(seconds: 60));
   }
 
-  static Future<http.Response> _post(String path, Map<String, dynamic> body, {String? token}) async {
+  static Future<http.Response> _post(
+    String path,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
     final encoded = jsonEncode(body);
     final baseUrl = await getApiBaseUrl();
     try {
       final res = await http
-          .post(Uri.parse('$baseUrl$path'), headers: _headers(token: token), body: encoded)
+          .post(
+            Uri.parse('$baseUrl$path'),
+            headers: _headers(token: token),
+            body: encoded,
+          )
           .timeout(const Duration(seconds: 60));
       if (res.statusCode < 500) return res;
     } on SocketException catch (_) {
     } on Exception catch (_) {}
     return http
-        .post(Uri.parse('$baseUrl$path'), headers: _headers(token: token), body: encoded)
+        .post(
+          Uri.parse('$baseUrl$path'),
+          headers: _headers(token: token),
+          body: encoded,
+        )
         .timeout(const Duration(seconds: 60));
   }
 
-  static Future<http.Response> _put(String path, Map<String, dynamic> body, {String? token}) async {
+  static Future<http.Response> _put(
+    String path,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
     final encoded = jsonEncode(body);
     final baseUrl = await getApiBaseUrl();
     try {
       final res = await http
-          .put(Uri.parse('$baseUrl$path'), headers: _headers(token: token), body: encoded)
+          .put(
+            Uri.parse('$baseUrl$path'),
+            headers: _headers(token: token),
+            body: encoded,
+          )
           .timeout(const Duration(seconds: 60));
       if (res.statusCode < 500) return res;
     } on SocketException catch (_) {
     } on Exception catch (_) {}
     return http
-        .put(Uri.parse('$baseUrl$path'), headers: _headers(token: token), body: encoded)
+        .put(
+          Uri.parse('$baseUrl$path'),
+          headers: _headers(token: token),
+          body: encoded,
+        )
         .timeout(const Duration(seconds: 60));
   }
 
@@ -126,8 +173,14 @@ class ApiService {
 
   // ── Auth ──────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
-    final res = await _post('/api/usuarios/login', {'email': email, 'password': password});
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
+    final res = await _post('/api/usuarios/login', {
+      'email': email,
+      'password': password,
+    });
     final data = jsonDecode(res.body);
     if (res.statusCode == 200) return data;
     throw data['mensaje'] ?? data['message'] ?? 'Error al iniciar sesión';
@@ -165,14 +218,18 @@ class ApiService {
     throw 'Error al cargar las compras';
   }
 
-  static Future<Map<String, dynamic>> getDetalleCompra(int numeroFactura) async {
+  static Future<Map<String, dynamic>> getDetalleCompra(
+    int numeroFactura,
+  ) async {
     final token = await getToken();
     final res = await _get('/api/compras/$numeroFactura', token: token);
     if (res.statusCode == 200) return jsonDecode(res.body);
     throw 'Error al cargar el detalle de la compra';
   }
 
-  static Future<Map<String, dynamic>> realizarCompra(Map<String, dynamic> body) async {
+  static Future<Map<String, dynamic>> realizarCompra(
+    Map<String, dynamic> body,
+  ) async {
     final token = await getToken();
     final res = await _post('/api/compras', body, token: token);
     final data = jsonDecode(res.body);
@@ -194,7 +251,11 @@ class ApiService {
     Map<String, dynamic> body,
   ) async {
     final token = await getToken();
-    final res = await _put('/api/usuarios/$idUsuario/perfil', body, token: token);
+    final res = await _put(
+      '/api/usuarios/$idUsuario/perfil',
+      body,
+      token: token,
+    );
     final data = jsonDecode(res.body);
     if (res.statusCode == 200) return data;
     throw data['mensaje'] ?? data['message'] ?? 'Error al actualizar el perfil';
@@ -204,21 +265,28 @@ class ApiService {
 
   static Future<String> getFacturaXml(int idCompra) async {
     final token = await getToken();
-    final res = await _post('/api/facturacion', {'idCompra': idCompra}, token: token);
+    final res = await _post('/api/facturacion', {
+      'idCompra': idCompra,
+    }, token: token);
     if (res.statusCode == 200) return res.body;
     throw 'Error al obtener la factura XML';
   }
 
   static Future<List<int>> descargarFacturaXml(int idCompra) async {
     final token = await getToken();
-    final res = await _post('/api/facturacion/descargar', {'idCompra': idCompra}, token: token);
+    final res = await _post('/api/facturacion/descargar', {
+      'idCompra': idCompra,
+    }, token: token);
     if (res.statusCode == 200) return res.bodyBytes;
     throw 'Error al descargar la factura XML';
   }
 
   static Future<Map<String, dynamic>> getFacturaConsultar(int idCompra) async {
     final token = await getToken();
-    final res = await _get('/api/facturacion/consultar/$idCompra', token: token);
+    final res = await _get(
+      '/api/facturacion/consultar/$idCompra',
+      token: token,
+    );
     if (res.statusCode == 200) return jsonDecode(res.body);
     throw 'Error al consultar el comprobante';
   }
@@ -234,7 +302,9 @@ class ApiService {
 
   // ── Pagos ─────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> consultarEstadoPago(int numeroFactura) async {
+  static Future<Map<String, dynamic>> consultarEstadoPago(
+    int numeroFactura,
+  ) async {
     final token = await getToken();
     final res = await _get('/api/pagos/$numeroFactura/estado', token: token);
     if (res.statusCode == 200) return jsonDecode(res.body);
@@ -243,7 +313,11 @@ class ApiService {
 
   static Future<Map<String, dynamic>> confirmarPago(int numeroFactura) async {
     final token = await getToken();
-    final res = await _post('/api/pagos/$numeroFactura/confirmar', {}, token: token);
+    final res = await _post(
+      '/api/pagos/$numeroFactura/confirmar',
+      {},
+      token: token,
+    );
     final data = jsonDecode(res.body);
     if (res.statusCode == 200) return data;
     throw data['mensaje'] ?? 'Error al confirmar el pago';
@@ -251,7 +325,11 @@ class ApiService {
 
   static Future<Map<String, dynamic>> crearPagoPaypal(int numeroFactura) async {
     final token = await getToken();
-    final res = await _post('/api/pagos/paypal/crear/$numeroFactura', {}, token: token);
+    final res = await _post(
+      '/api/pagos/paypal/crear/$numeroFactura',
+      {},
+      token: token,
+    );
     final data = jsonDecode(res.body);
     if (res.statusCode == 200 || res.statusCode == 201) return data;
     throw data['mensaje'] ?? 'Error al iniciar pago con PayPal';
@@ -265,30 +343,49 @@ class ApiService {
     throw data['mensaje'] ?? 'Error al obtener el Client ID de PayPal';
   }
 
-  static Future<void> confirmarPagoPaypal(int numeroFactura, String token, String payerId) async {
+  static Future<void> confirmarPagoPaypal(
+    int numeroFactura,
+    String token,
+    String payerId,
+  ) async {
     final tokenSession = await getToken();
-    await _get('/api/pagos/paypal/success?numeroFactura=$numeroFactura&token=$token&PayerID=$payerId', token: tokenSession);
+    await _get(
+      '/api/pagos/paypal/success?numeroFactura=$numeroFactura&token=$token&PayerID=$payerId',
+      token: tokenSession,
+    );
   }
 
   // ── Facturación (GET endpoints) ───────────────────────────────────
 
   static Future<List<int>> descargarXmlGet(int idCompra) async {
     final token = await getToken();
-    final res = await _get('/api/facturacion/$idCompra/xml/descargar', token: token);
+    final res = await _get(
+      '/api/facturacion/$idCompra/xml/descargar',
+      token: token,
+    );
     if (res.statusCode == 200) return res.bodyBytes;
     throw 'Error al descargar la factura XML';
   }
 
   static Future<List<int>> descargarPdfGet(int idCompra) async {
     final token = await getToken();
-    final res = await _get('/api/facturacion/$idCompra/pdf/descargar', token: token);
+    final res = await _get(
+      '/api/facturacion/$idCompra/pdf/descargar',
+      token: token,
+    );
     if (res.statusCode == 200) return res.bodyBytes;
     throw 'Error al descargar el PDF';
   }
 
-  static Future<Map<String, dynamic>> enviarFacturaPorEmail(int idCompra) async {
+  static Future<Map<String, dynamic>> enviarFacturaPorEmail(
+    int idCompra,
+  ) async {
     final token = await getToken();
-    final res = await _post('/api/facturacion/$idCompra/enviar-email', {}, token: token);
+    final res = await _post(
+      '/api/facturacion/$idCompra/enviar-email',
+      {},
+      token: token,
+    );
     final data = jsonDecode(res.body);
     if (res.statusCode == 200) return data;
     throw data['mensaje'] ?? 'Error al enviar la factura por correo';

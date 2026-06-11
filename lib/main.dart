@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'core/constants.dart';
 import 'core/api_service.dart';
 import 'screens/login_screen.dart';
-import 'screens/productos_screen.dart';
+import 'screens/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final loggedIn = await ApiService.isLoggedIn();
-  runApp(MyApp(startLoggedIn: loggedIn));
+  bool puedeEntrar = false;
+  if (loggedIn) {
+    final activo = await ApiService.isUsuarioActivo();
+    if (activo) {
+      puedeEntrar = true;
+    } else {
+      await ApiService.clearSession();
+    }
+  }
+  runApp(MyApp(startLoggedIn: puedeEntrar));
 }
 
 class MyApp extends StatelessWidget {
@@ -20,11 +29,11 @@ class MyApp extends StatelessWidget {
       title: 'TechStore360',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: kTeal),
+        colorScheme: ColorScheme.fromSeed(seedColor: kTeal, brightness: Brightness.light),
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
-      home: startLoggedIn ? const ProductosScreen() : const LoginScreen(),
+      home: startLoggedIn ? const AuthWrapper() : const LoginScreen(),
     );
   }
 }
