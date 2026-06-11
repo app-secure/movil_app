@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_service.dart';
 import '../core/constants.dart';
+import '../core/contingency_service.dart';
 import 'editar_perfil_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -64,7 +65,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
             ),
         ],
       ),
-      body: _loading
+      body: ContingencyBanner(child: _loading
           ? const Center(child: CircularProgressIndicator(color: kTeal))
           : _error != null
               ? Center(
@@ -190,6 +191,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         ],
                       ),
                     ),
+      ),
     );
   }
 

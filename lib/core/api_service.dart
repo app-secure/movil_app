@@ -75,6 +75,12 @@ class ApiService {
     throw data['mensaje'] ?? 'Error al verificar estado';
   }
 
+  static Future<Map<String, dynamic>> getEstadoDB() async {
+    final res = await _get('/api/test-db');
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw 'Error al verificar estado de la base de datos';
+  }
+
   static Future<bool> isUsuarioActivo() async {
     try {
       final data = await getMiEstado();

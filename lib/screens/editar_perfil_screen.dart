@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_service.dart';
 import '../core/constants.dart';
+import '../core/contingency_service.dart';
 import 'package:flutter/services.dart';
 
 class EditarPerfilScreen extends StatefulWidget {
@@ -42,6 +43,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   }
 
   Future<void> _guardar() async {
+    if (ContingencyService.bloquear(context)) return;
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = null; });
     try {
@@ -94,7 +96,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: SingleChildScrollView(
+      body: ContingencyBanner(child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
@@ -182,26 +184,30 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _loading ? null : _guardar,
-                  icon: _loading
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.save_outlined, size: 18),
-                  label: const Text('GUARDAR CAMBIOS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 0.8)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kTeal,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: kTeal.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
+              ContingencyGuardButton(
+                action: _guardar,
+                builder: (onPressed) => SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _loading ? null : onPressed,
+                    icon: _loading
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.save_outlined, size: 18),
+                    label: const Text('GUARDAR CAMBIOS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 0.8)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kTeal,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ),
       ),
     );
   }

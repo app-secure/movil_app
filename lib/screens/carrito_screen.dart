@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../core/constants.dart';
 import '../core/api_service.dart';
 import '../core/cart_manager.dart';
+import '../core/contingency_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'paypal_webview_screen.dart';
 import 'factura_screen.dart';
@@ -24,6 +25,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
   int? _lastNumeroFactura;
 
   void _abrirCheckout() async {
+    if (ContingencyService.bloquear(context)) return;
     final res = await showModalBottomSheet<dynamic>(
       context: context,
       isScrollControlled: true,
@@ -307,7 +309,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: items.isEmpty
+      body: ContingencyBanner(child: items.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -370,23 +372,27 @@ class _CarritoScreenState extends State<CarritoScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: _procesando ? null : _abrirCheckout,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kTeal,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            elevation: 0,
+                      ContingencyGuardButton(
+                        action: _abrirCheckout,
+                        builder: (onPressed) => SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton.icon(
+                            onPressed: _procesando ? null : onPressed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kTeal,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                            icon: _procesando
+                                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                                : const Icon(Icons.payment, color: Color(0xFF4CAF50), size: 22),
+                            label: _procesando
+                                ? const SizedBox.shrink()
+                                : const Text('Pagar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                           ),
-                          icon: _procesando
-                              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                              : const Icon(Icons.payment, color: Color(0xFF4CAF50), size: 22),
-                          label: _procesando
-                              ? const SizedBox.shrink()
-                              : const Text('Pagar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         ),
                       ),
                     ],
@@ -394,6 +400,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
                 ),
               ],
             ),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/api_service.dart';
 import '../core/constants.dart';
+import '../core/contingency_service.dart';
 import 'login_screen.dart';
 import 'productos_screen.dart';
 
@@ -21,11 +22,13 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _iniciarVerificacion();
+    ContingencyService.instance.start();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    ContingencyService.instance.stop();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

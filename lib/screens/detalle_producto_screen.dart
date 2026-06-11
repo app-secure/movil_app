@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../core/constants.dart';
 import '../core/api_service.dart';
 import '../core/cart_manager.dart';
+import '../core/contingency_service.dart';
 
 class DetalleProductoScreen extends StatefulWidget {
   final int idProducto;
@@ -33,6 +34,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
   }
 
   void _agregar() {
+    if (ContingencyService.bloquear(context)) return;
     if (_producto == null) return;
     final stock = _producto!['stock'] ?? 0;
     if (stock <= 0) {
@@ -104,7 +106,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: CustomScrollView(
+      body: ContingencyBanner(child: CustomScrollView(
         slivers: [
           // AppBar con imagen expandible
           SliverAppBar(
@@ -312,30 +314,33 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
                       const SizedBox(width: 12),
                       // Agregar al carrito
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: hayStock ? _agregar : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kTeal,
-                            disabledBackgroundColor: Colors.grey.shade300,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
-                            minimumSize: const Size(double.infinity, 54),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                hayStock ? Icons.add_shopping_cart_rounded : Icons.remove_shopping_cart_outlined,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                hayStock ? 'Agregar al carrito' : 'Sin stock',
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                              ),
-                            ],
+                        child: ContingencyGuardButton(
+                          action: _agregar,
+                          builder: (onPressed) => ElevatedButton(
+                            onPressed: hayStock ? onPressed : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kTeal,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
+                              minimumSize: const Size(double.infinity, 54),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  hayStock ? Icons.add_shopping_cart_rounded : Icons.remove_shopping_cart_outlined,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  hayStock ? 'Agregar al carrito' : 'Sin stock',
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -347,6 +352,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

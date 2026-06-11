@@ -9,6 +9,7 @@ import '../screens/carrito_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/mis_compras_screen.dart';
 import '../screens/perfil_screen.dart';
+import '../core/contingency_service.dart';
 
 class ProductosScreen extends StatefulWidget {
   const ProductosScreen({super.key});
@@ -185,7 +186,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: RefreshIndicator(
+      body: ContingencyBanner(child: RefreshIndicator(
         onRefresh: _cargarProductos,
         color: kTeal,
         child: _loading
@@ -290,6 +291,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
                     ),
                   ],
                 ),
+      ),
       ),
     );
   }
