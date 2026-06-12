@@ -38,15 +38,25 @@ class _CarritoScreenState extends State<CarritoScreen> {
     if (res == null) return;
 
     if (res is PaypalResult) {
-      _procesarResultadoPago(res, _lastNumeroFactura ?? 0);
+      _procesarResultadoPago(res, 0);
     } else if (res is Map<String, dynamic>) {
+      if (res['result'] == PaypalResult.success) {
+        _procesarResultadoPago(PaypalResult.success, res['numeroFactura'] ?? 0);
+        return;
+      } else if (res['result'] == PaypalResult.error) {
+        _procesarResultadoPago(PaypalResult.error, 0, message: res['message']);
+        return;
+      } else if (res['result'] == PaypalResult.cancel) {
+        _procesarResultadoPago(PaypalResult.cancel, 0);
+        return;
+      }
+
       final approvalUrl = res['approvalUrl'] ?? '';
       final orderId = res['orderId'] ?? '';
       final clientId = res['clientId'] ?? '';
-      final numeroFactura = res['numeroFactura'] ?? 0;
 
       if (!mounted) return;
-      final result = await Navigator.push<PaypalResult>(
+      final result = await Navigator.push<dynamic>(
         context,
         MaterialPageRoute(
           fullscreenDialog: true,
@@ -54,11 +64,24 @@ class _CarritoScreenState extends State<CarritoScreen> {
             approvalUrl: approvalUrl,
             orderId: orderId,
             clientId: clientId,
-            numeroFactura: numeroFactura,
+            numeroFactura: 0,
           ),
         ),
       );
-      _procesarResultadoPago(result, numeroFactura);
+
+      if (result is Map<String, dynamic>) {
+        if (result['result'] == PaypalResult.success) {
+          _procesarResultadoPago(PaypalResult.success, result['numeroFactura'] ?? 0);
+        } else if (result['result'] == PaypalResult.error) {
+          _procesarResultadoPago(PaypalResult.error, 0, message: result['message']);
+        } else {
+          _procesarResultadoPago(PaypalResult.cancel, 0);
+        }
+      } else if (result is PaypalResult) {
+        _procesarResultadoPago(result, 0);
+      } else {
+        _procesarResultadoPago(PaypalResult.cancel, 0);
+      }
     }
   }
 
@@ -127,24 +150,96 @@ class _CarritoScreenState extends State<CarritoScreen> {
     );
   }
 
-  void _procesarResultadoPago(PaypalResult? result, int numeroFactura) {
+  Future<void> _actualizarStockCarrito() async {
+    try {
+      final productos = await ApiService.getProductos();
+      for (var prod in productos) {
+        final id = prod['idProducto'];
+        final stock = prod['stock'] ?? 0;
+        CartManager.instance.actualizarStock(id, stock);
+      }
+      setState(() {});
+    } catch (e) {
+      debugPrint("Error actualizando stock del carrito: $e");
+    }
+  }
+
+  void _mostrarDialogoAlerta({required String titulo, required String mensaje, bool esErrorStock = false}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: kError.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                esErrorStock ? Icons.inventory_2_outlined : Icons.error_outline_rounded,
+                color: kError,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                titulo,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          mensaje,
+          style: const TextStyle(fontSize: 13, color: kTextGrey, height: 1.5),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kTeal,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _procesarResultadoPago(PaypalResult? result, int numeroFactura, {String? message}) {
     if (result == PaypalResult.success) {
       CartManager.instance.limpiar();
       _mostrarDialogoExito(numeroFactura);
-    } else {
-      // Si se cancela o falla el pago, anulamos el pedido temporal en la base de datos para restaurar el stock
-      ApiService.anularCompra(numeroFactura).catchError((e) {
-        debugPrint("Error al anular compra tras cancelación de PayPal: $e");
-      });
-
+    } else if (result == PaypalResult.cancel) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result == PaypalResult.cancel
-            ? 'Pago cancelado. Puedes intentarlo de nuevo.'
-            : 'Error en el pago. Puedes intentarlo de nuevo.'),
+        content: const Text('Pago cancelado. Puedes intentarlo de nuevo.'),
         backgroundColor: Colors.orange.shade700,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
+    } else {
+      final esErrorStock = message != null && (message.toLowerCase().contains('stock') || message.toLowerCase().contains('insuficiente'));
+      if (esErrorStock) {
+        _actualizarStockCarrito();
+        _mostrarDialogoAlerta(
+          titulo: 'Sin stock disponible',
+          mensaje: 'Otro usuario ya realizó la compra de estos artículos y el stock se ha agotado. Tu pago no fue procesado.',
+          esErrorStock: true,
+        );
+      } else {
+        final msg = message != null ? message.replaceFirst(RegExp(r'^Exception:\s*'), '') : 'No se pudo procesar tu pago con PayPal.';
+        _mostrarDialogoAlerta(
+          titulo: 'Error en el pago',
+          mensaje: msg,
+          esErrorStock: false,
+        );
+      }
     }
   }
 
@@ -176,14 +271,8 @@ class _CarritoScreenState extends State<CarritoScreen> {
       if (requiereFactura && cedulaFactura != null) body['cedulaFactura'] = cedulaFactura;
       if (requiereFactura && nombreFactura  != null) body['nombreFactura'] = nombreFactura;
 
-      // 1. Crear el pedido
-      final data          = await ApiService.realizarCompra(body);
-      final numeroFactura = data['numeroFactura'] ?? data['idCompra'] ?? data['id'];
-
-      _lastNumeroFactura = numeroFactura;
-
-      // 2. Obtener la URL de aprobación de PayPal
-      final paypalData   = await ApiService.crearPagoPaypal(numeroFactura);
+      // 1. Crear el pago y obtener la URL de aprobación de PayPal directamente (sin registrar compra aún)
+      final paypalData   = await ApiService.crearPagoPaypalSinOrden(body);
       final approvalUrl  = paypalData['approvalUrl'] ?? '';
       final orderId      = paypalData['orderId'] ?? '';
       final clientId     = paypalData['clientId'] ?? '';
@@ -191,7 +280,6 @@ class _CarritoScreenState extends State<CarritoScreen> {
       if (approvalUrl.isEmpty) throw Exception('No se recibió URL de PayPal');
 
       return {
-        'numeroFactura': numeroFactura,
         'approvalUrl': approvalUrl,
         'orderId': orderId,
         'clientId': clientId,
@@ -200,6 +288,9 @@ class _CarritoScreenState extends State<CarritoScreen> {
       if (!mounted) return null;
       final mensaje = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
       final esStockInsuficiente = mensaje.toLowerCase().contains('stock');
+      if (esStockInsuficiente) {
+        _actualizarStockCarrito();
+      }
       showDialog(
         context: context,
         useRootNavigator: true,
@@ -272,6 +363,7 @@ class _CarritoScreenState extends State<CarritoScreen> {
   Widget build(BuildContext context) {
     final items = CartManager.instance.items;
     final total = CartManager.instance.total;
+    final tieneAgotados = items.any((i) => i.cantidad <= 0 || i.stock <= 0);
 
     return Scaffold(
       backgroundColor: kBackground,
@@ -372,13 +464,36 @@ class _CarritoScreenState extends State<CarritoScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      if (tieneAgotados) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: kError.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: kError.withValues(alpha: 0.2)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: kError, size: 20),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Tienes productos agotados en tu carrito. Por favor elimínalos para continuar con el pago.',
+                                  style: TextStyle(color: kError, fontSize: 12, fontWeight: FontWeight.w700, height: 1.4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       ContingencyGuardButton(
                         action: _abrirCheckout,
                         builder: (onPressed) => SizedBox(
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton.icon(
-                            onPressed: _procesando ? null : onPressed,
+                            onPressed: (_procesando || tieneAgotados) ? null : onPressed,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: kTeal,
                               foregroundColor: Colors.white,
@@ -388,10 +503,10 @@ class _CarritoScreenState extends State<CarritoScreen> {
                             ),
                             icon: _procesando
                                 ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                                : const Icon(Icons.payment, color: Color(0xFF4CAF50), size: 22),
+                                : Icon(Icons.payment, color: tieneAgotados ? Colors.grey : const Color(0xFF4CAF50), size: 22),
                             label: _procesando
                                 ? const SizedBox.shrink()
-                                : const Text('Pagar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                : Text('Pagar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: tieneAgotados ? Colors.grey.shade600 : Colors.white)),
                           ),
                         ),
                       ),
@@ -480,7 +595,7 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
       );
       if (res != null) {
         setState(() {
-          _numeroFactura = res['numeroFactura'];
+          _numeroFactura = 0;
         });
         return res['orderId'];
       }
@@ -512,7 +627,7 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
           setState(() {
             _orderId = res['orderId'];
             _clientId = res['clientId'];
-            _numeroFactura = res['numeroFactura'];
+            _numeroFactura = 0;
             _procesando = false;
           });
         } else {
@@ -534,7 +649,12 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.fromLTRB(20, 12, 20, bottom + 16),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + bottom + 16,
+      ),
       child: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -577,8 +697,8 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('PayPal Sandbox', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                    Text('Pago seguro con tu cuenta de prueba', style: TextStyle(color: Color(0xFFB3C4E8), fontSize: 11)),
+                    Text('PayPal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                    Text('Pago seguro y confiable con tu cuenta', style: TextStyle(color: Color(0xFFB3C4E8), fontSize: 11)),
                   ]),
                 ),
                 const Icon(Icons.check_circle, color: Color(0xFF009CDE), size: 20),
@@ -598,7 +718,7 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                 Icon(Icons.info_outline, color: Color(0xFF003087), size: 16),
                 SizedBox(width: 8),
                 Expanded(child: Text(
-                  'Al presionar "Pagar con PayPal" se abrirá la página de inicio de sesión de PayPal Sandbox.',
+                  'Al presionar "Pagar con PayPal" se abrirá la página de inicio de sesión de PayPal.',
                   style: TextStyle(fontSize: 11.5, color: Color(0xFF003087), height: 1.4),
                 )),
               ]),
@@ -760,14 +880,25 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                           ),
                         );
                         try {
-                          await ApiService.confirmarPagoPaypal(_numeroFactura ?? 0, orderId ?? '', payerId ?? '');
+                          final confirmRes = await ApiService.confirmarPagoPaypal(null, orderId ?? '', payerId ?? '');
+                          final numFact = confirmRes['numeroFactura'];
+                          if (mounted) {
+                            Navigator.pop(context); // Cierra loader
+                            Navigator.pop(context, {'result': PaypalResult.success, 'numeroFactura': numFact}); // Cierra sheet
+                          }
                         } catch (e) {
                           debugPrint("Error al confirmar pago PayPal en Web: $e");
-                        } finally {
-                          if (mounted) Navigator.pop(context); // Cierra diálogo
+                          if (mounted) {
+                            Navigator.pop(context); // Cierra loader
+                            Navigator.pop(context, {
+                              'result': PaypalResult.error,
+                              'message': e.toString(),
+                            });
+                          }
                         }
+                      } else {
+                        if (mounted) Navigator.pop(context, result);
                       }
-                      if (mounted) Navigator.pop(context, result);
                     },
                   ),
                 ),
@@ -809,7 +940,9 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final isAgotado = item.stock <= 0 || item.cantidad <= 0;
+
+    final cardContent = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -831,6 +964,21 @@ class _CartItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(item.nombre, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: kTextDark), maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (isAgotado) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: kError.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: kError.withValues(alpha: 0.3)),
+                    ),
+                    child: const Text(
+                      'AGOTADO / SIN STOCK',
+                      style: TextStyle(color: kError, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text('\$${item.precio.toStringAsFixed(2)} c/u', style: const TextStyle(color: kTextGrey, fontSize: 12)),
                 const SizedBox(height: 8),
@@ -864,6 +1012,14 @@ class _CartItemCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (isAgotado) {
+      return Opacity(
+        opacity: 0.6,
+        child: cardContent,
+      );
+    }
+    return cardContent;
   }
 
   Widget _qtyBtn(IconData icon, VoidCallback? onTap, {bool disabled = false}) => GestureDetector(

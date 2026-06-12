@@ -204,9 +204,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
                   ],
                 ),
               )
-            : _productos.isEmpty
-              ? const Center(child: Text('No hay productos disponibles', style: TextStyle(color: kTextGrey)))
-              : Column(
+            : Column(
                   children: [
                     // Buscador + filtros
                     Container(
@@ -274,20 +272,22 @@ class _ProductosScreenState extends State<ProductosScreen> {
                       ),
                     ),
                     Expanded(
-                      child: GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          mainAxisExtent: 258,
-                        ),
-                        itemCount: _productos.length,
-                        itemBuilder: (_, i) => _ProductoCard(
-                          producto: _productos[i],
-                          onCartUpdated: _actualizarCarrito,
-                        ),
-                      ),
+                      child: _productos.isEmpty
+                          ? const Center(child: Text('No hay productos disponibles', style: TextStyle(color: kTextGrey)))
+                          : GridView.builder(
+                              padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                mainAxisExtent: 258,
+                              ),
+                              itemCount: _productos.length,
+                              itemBuilder: (_, i) => _ProductoCard(
+                                producto: _productos[i],
+                                onCartUpdated: _actualizarCarrito,
+                              ),
+                            ),
                     ),
                   ],
                 ),

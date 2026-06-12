@@ -1032,34 +1032,6 @@ class _FacturaHtmlModalState extends State<_FacturaHtmlModal> {
             const SizedBox(height: 16),
           ],
 
-          const Padding(
-            padding: EdgeInsets.only(left: 2, bottom: 8),
-            child: Text(
-              'Detalle de Comprobante',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: kTextGrey,
-              ),
-            ),
-          ),
-          _ComprobanteCard(
-            children: [
-              _Fila('# Factura', '#${widget.numeroFactura}'),
-              _Fila('Subtotal', '\$${subtotalEfectivo.toStringAsFixed(2)}'),
-              _Fila(
-                'IVA (15%)',
-                '\$${(subtotalEfectivo * 0.15).toStringAsFixed(2)}',
-              ),
-              _Fila(
-                'Total General',
-                '\$${totalConIva.toStringAsFixed(2)}',
-                bold: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
           if (itemsEfectivos.isNotEmpty) ...[
             const Padding(
               padding: EdgeInsets.only(left: 2, bottom: 8),
@@ -1101,7 +1073,35 @@ class _FacturaHtmlModalState extends State<_FacturaHtmlModal> {
                 ),
               );
             }),
+            const SizedBox(height: 16),
           ],
+
+          const Padding(
+            padding: EdgeInsets.only(left: 2, bottom: 8),
+            child: Text(
+              'Detalle de Comprobante',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: kTextGrey,
+              ),
+            ),
+          ),
+          _ComprobanteCard(
+            children: [
+              _Fila('# Factura', '#${widget.numeroFactura}'),
+              _Fila('Subtotal', '\$${subtotalEfectivo.toStringAsFixed(2)}'),
+              _Fila(
+                'IVA (15%)',
+                '\$${(subtotalEfectivo * 0.15).toStringAsFixed(2)}',
+              ),
+              _Fila(
+                'Total General',
+                '\$${totalConIva.toStringAsFixed(2)}',
+                bold: true,
+              ),
+            ],
+          ),
         ],
       ),
     );

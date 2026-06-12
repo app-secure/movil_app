@@ -100,6 +100,8 @@ class _PaypalWebViewMobileState extends State<PaypalWebViewMobile> {
         ),
       ),
     );
+    bool success = false;
+    String? errorMsg;
     try {
       final uri = Uri.parse(url);
       final numeroFactura = int.tryParse(uri.queryParameters['numeroFactura'] ?? '') ?? widget.numeroFactura;
@@ -108,12 +110,18 @@ class _PaypalWebViewMobileState extends State<PaypalWebViewMobile> {
 
       // Invocar directamente el endpoint de éxito de la API mediante HTTP
       await ApiService.confirmarPagoPaypal(numeroFactura, token, payerId);
+      success = true;
     } catch (e) {
       debugPrint("Error al confirmar pago PayPal directamente: $e");
+      errorMsg = e.toString();
     } finally {
       if (mounted) {
         Navigator.of(context).pop(); // Cierra diálogo
-        Navigator.of(context).pop(PaypalResult.success); // Cierra pantalla
+        if (success) {
+          Navigator.of(context).pop(PaypalResult.success); // Cierra pantalla
+        } else {
+          Navigator.of(context).pop({'result': PaypalResult.error, 'message': errorMsg});
+        }
       }
     }
   }

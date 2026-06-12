@@ -114,34 +114,35 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
         ),
       ),
     );
+    int numFact = 0;
+    bool success = false;
+    String? errorMsg;
     try {
       final uri = Uri.parse(url);
-      final numeroFactura = int.tryParse(uri.queryParameters['numeroFactura'] ?? '') ?? widget.numeroFactura;
       final token = uri.queryParameters['token'] ?? widget.orderId;
       final payerId = uri.queryParameters['PayerID'] ?? '';
 
       // Invocar directamente el endpoint de éxito de la API mediante HTTP
-      await ApiService.confirmarPagoPaypal(numeroFactura, token, payerId);
+      final response = await ApiService.confirmarPagoPaypal(widget.numeroFactura > 0 ? widget.numeroFactura : null, token, payerId);
+      numFact = response['numeroFactura'] ?? 0;
+      success = true;
     } catch (e) {
       debugPrint("Error al confirmar pago PayPal directamente: $e");
+      errorMsg = e.toString();
     } finally {
       if (mounted) {
         Navigator.of(context).pop(); // Cierra diálogo
-        Navigator.of(context).pop(PaypalResult.success); // Cierra pantalla
+        if (success) {
+          Navigator.of(context).pop({'result': PaypalResult.success, 'numeroFactura': numFact}); // Cierra pantalla
+        } else {
+          Navigator.of(context).pop({'result': PaypalResult.error, 'message': errorMsg});
+        }
       }
     }
   }
 
   void _anularCompraAsync(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      final numeroFactura = int.tryParse(uri.queryParameters['numeroFactura'] ?? '') ?? widget.numeroFactura;
-      await ApiService.anularCompra(numeroFactura);
-    } catch (e) {
-      debugPrint("Error al anular compra PayPal: $e");
-    } finally {
-      if (mounted) Navigator.of(context).pop(PaypalResult.cancel);
-    }
+    if (mounted) Navigator.of(context).pop(PaypalResult.cancel);
   }
 
   void _confirmarCancelar() {
@@ -353,15 +354,29 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
                     ),
                   ),
                 );
+                int numFact = 0;
+                bool success = false;
+                String? errorMsg;
                 try {
-                  await ApiService.confirmarPagoPaypal(widget.numeroFactura, orderId ?? widget.orderId, payerId ?? '');
+                  final response = await ApiService.confirmarPagoPaypal(widget.numeroFactura > 0 ? widget.numeroFactura : null, orderId ?? widget.orderId, payerId ?? '');
+                  numFact = response['numeroFactura'] ?? 0;
+                  success = true;
                 } catch (e) {
                   debugPrint("Error al confirmar pago PayPal en Web: $e");
+                  errorMsg = e.toString();
                 } finally {
-                  if (mounted) Navigator.of(context).pop(); // Cierra diálogo
+                  if (mounted) {
+                    Navigator.of(context).pop(); // Cierra diálogo
+                    if (success) {
+                      Navigator.of(context).pop({'result': PaypalResult.success, 'numeroFactura': numFact});
+                    } else {
+                      Navigator.of(context).pop({'result': PaypalResult.error, 'message': errorMsg});
+                    }
+                  }
                 }
+              } else {
+                if (mounted) Navigator.of(context).pop(result);
               }
-              if (mounted) Navigator.of(context).pop(result);
             },
           ),
 

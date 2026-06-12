@@ -19,69 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showPassword  = false;
   String? _error;
 
-  Future<void> _mostrarConfigServidor(BuildContext context) async {
-    final currentUrl = await ApiService.getApiBaseUrl();
-    final ctrl = TextEditingController(text: currentUrl);
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Configurar Servidor API', style: TextStyle(fontWeight: FontWeight.w800)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Ingresa la dirección IP o URL del backend:', style: TextStyle(fontSize: 13, color: kTextGrey)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              decoration: InputDecoration(
-                hintText: 'http://10.0.2.2:5020',
-                filled: true,
-                fillColor: kBackground,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Por defecto: 10.0.2.2 en Android (emulador) o localhost en otros.',
-              style: TextStyle(fontSize: 11, color: kTextGrey),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await ApiService.saveCustomApiUrl('');
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Restablecer', style: TextStyle(color: kError)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: kTextGrey)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newUrl = ctrl.text.trim();
-              if (newUrl.isNotEmpty) {
-                await ApiService.saveCustomApiUrl(newUrl);
-              }
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kTeal,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   void dispose() {
@@ -123,9 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: const BoxDecoration(gradient: kTealGradient),
         child: SafeArea(
-          child: Stack(
-            children: [
-              Center(
+          child: Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
                   child: Column(
@@ -250,20 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: IconButton(
-              tooltip: 'Configurar servidor API',
-              icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () => _mostrarConfigServidor(context),
-            ),
-          ),
-        ],
+        ),
       ),
-    ),
-  ),
-);
+    );
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) => InputDecoration(

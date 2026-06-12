@@ -134,16 +134,14 @@ class _CompraCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: esAbierta
-                        ? kGreen.withValues(alpha: 0.1)
-                        : kTeal.withValues(alpha: 0.1),
+                    color: kTeal.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     esAbierta
                         ? Icons.shopping_bag_rounded
                         : Icons.shopping_bag_outlined,
-                    color: esAbierta ? kGreen : kTeal,
+                    color: kTeal,
                     size: 22,
                   ),
                 ),
@@ -173,10 +171,10 @@ class _CompraCard extends StatelessWidget {
                           const Spacer(),
                           Text(
                             '\$${total.toStringAsFixed(2)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
-                              color: esAbierta ? kGreen : kTeal,
+                              color: kTeal,
                             ),
                           ),
                         ],
@@ -203,7 +201,7 @@ class _CompraCard extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kGreen,
+                    backgroundColor: kTeal,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -227,7 +225,7 @@ class _CompraCard extends StatelessWidget {
   String _formatFecha(String raw) {
     if (raw.isEmpty) return '—';
     try {
-      final dt = DateTime.parse(raw);
+      final dt = DateTime.parse(raw).toLocal();
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return raw;
@@ -243,7 +241,7 @@ class _EstadoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final upper = estado.toUpperCase();
     final color = switch (upper) {
-      'ABIERTA'        => kGreen,
+      'ABIERTA'        => kTeal,
       'PENDIENTE_PAGO' => const Color(0xFFF9A825),
       'ANULADA'        => kError,
       _                => kTextGrey,

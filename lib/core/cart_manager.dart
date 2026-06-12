@@ -3,7 +3,7 @@ class CartItem {
   final String nombre;
   final double precio;
   final String? urlImagen;
-  final int stock;
+  int stock;
   int cantidad;
 
   CartItem({
@@ -27,6 +27,17 @@ class CartManager {
 
   int get totalItems => _items.fold(0, (s, i) => s + i.cantidad);
   double get total => _items.fold(0, (s, i) => s + i.subtotal);
+
+  /// Actualiza el stock de un producto y ajusta la cantidad en el carrito si excede el nuevo stock.
+  void actualizarStock(int idProducto, int nuevoStock) {
+    final idx = _items.indexWhere((i) => i.idProducto == idProducto);
+    if (idx >= 0) {
+      _items[idx].stock = nuevoStock;
+      if (_items[idx].cantidad > nuevoStock) {
+        _items[idx].cantidad = nuevoStock;
+      }
+    }
+  }
 
   /// Retorna null si ok, o mensaje de error si no se puede agregar
   String? agregar(CartItem item) {

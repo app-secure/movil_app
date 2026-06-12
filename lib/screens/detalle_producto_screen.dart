@@ -249,7 +249,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
 
                   // Subtotal
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [kTeal.withValues(alpha: 0.07), kTeal.withValues(alpha: 0.03)],
@@ -288,6 +288,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 16),
                   const Spacer(),
 
                   // Botones de acción

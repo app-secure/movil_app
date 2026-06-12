@@ -84,7 +84,7 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
         });
       } else {
         if (!mounted) return;
-        final result = await Navigator.push<PaypalResult>(
+        final result = await Navigator.push<dynamic>(
           context,
           MaterialPageRoute(
             fullscreenDialog: true,
@@ -96,16 +96,56 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
             ),
           ),
         );
-        if (result == PaypalResult.success) {
+        bool isSuccess = false;
+        String? errorMsg;
+        if (result is Map<String, dynamic>) {
+          if (result['result'] == PaypalResult.success) {
+            isSuccess = true;
+          } else if (result['result'] == PaypalResult.error) {
+            errorMsg = result['message'];
+          }
+        } else if (result == PaypalResult.success) {
+          isSuccess = true;
+        }
+
+        if (isSuccess) {
           _cargar();
         } else {
           setState(() => _pagando = false);
+          if (errorMsg != null) {
+            if (errorMsg.toLowerCase().contains('stock') || errorMsg.toLowerCase().contains('insuficiente')) {
+              _mostrarDialogoAlerta(
+                titulo: 'Sin stock disponible',
+                mensaje: 'Otro usuario ya realizó la compra de estos artículos y el stock se ha agotado. Tu pago no fue procesado.',
+                esErrorStock: true,
+              );
+            } else {
+              _mostrarDialogoAlerta(
+                titulo: 'Error en el pago',
+                mensaje: errorMsg.replaceFirst(RegExp(r'^Exception:\s*'), ''),
+                esErrorStock: false,
+              );
+            }
+          }
         }
       }
     } catch (e) {
       if (!mounted) return;
-      _snackError('Error al iniciar PayPal: $e');
+      final errorMsg = e.toString();
       setState(() => _pagando = false);
+      if (errorMsg.toLowerCase().contains('stock') || errorMsg.toLowerCase().contains('insuficiente')) {
+        _mostrarDialogoAlerta(
+          titulo: 'Sin stock disponible',
+          mensaje: 'Otro usuario ya realizó la compra de estos artículos y el stock se ha agotado. Tu pago no fue procesado.',
+          esErrorStock: true,
+        );
+      } else {
+        _mostrarDialogoAlerta(
+          titulo: 'Error al iniciar PayPal',
+          mensaje: errorMsg.replaceFirst(RegExp(r'^Exception:\s*'), ''),
+          esErrorStock: false,
+        );
+      }
     }
   }
 
@@ -163,6 +203,54 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
     behavior: SnackBarBehavior.floating,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
   ));
+
+  void _mostrarDialogoAlerta({required String titulo, required String mensaje, bool esErrorStock = false}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: kError.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                esErrorStock ? Icons.inventory_2_outlined : Icons.error_outline_rounded,
+                color: kError,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                titulo,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          mensaje,
+          style: const TextStyle(fontSize: 13, color: kTextGrey, height: 1.5),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kTeal,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +389,7 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
               ),
               const SizedBox(height: 14),
               const Text(
-                'Completa el pago de tu pedido con PayPal Sandbox. Se abrirá la pantalla de inicio de sesión de PayPal en tu navegador.',
+                'Completa el pago de tu pedido con PayPal. Se abrirá la pantalla de inicio de sesión de PayPal en tu navegador.',
                 style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7A8D), height: 1.5),
                 textAlign: TextAlign.center,
               ),
@@ -345,6 +433,22 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
                         await ApiService.confirmarPagoPaypal(widget.numeroFactura, orderId ?? _orderId ?? '', payerId ?? '');
                       } catch (e) {
                         debugPrint("Error al confirmar pago PayPal en Web: $e");
+                        final errorMsg = e.toString();
+                        if (mounted) {
+                          if (errorMsg.toLowerCase().contains('stock') || errorMsg.toLowerCase().contains('insuficiente')) {
+                            _mostrarDialogoAlerta(
+                              titulo: 'Sin stock disponible',
+                              mensaje: 'Otro usuario ya realizó la compra de estos artículos y el stock se ha agotado. Tu pago no fue procesado.',
+                              esErrorStock: true,
+                            );
+                          } else {
+                            _mostrarDialogoAlerta(
+                              titulo: 'Error en el pago',
+                              mensaje: errorMsg.replaceFirst(RegExp(r'^Exception:\s*'), ''),
+                              esErrorStock: false,
+                            );
+                          }
+                        }
                       } finally {
                         if (mounted) Navigator.of(context).pop(); // Cierra diálogo
                       }
@@ -403,7 +507,7 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
                 ),
               const SizedBox(height: 10),
               const Text(
-                'Serás redirigido a PayPal Sandbox para completar el pago de forma segura.',
+                'Serás redirigido a PayPal para completar el pago de forma segura.',
                 style: TextStyle(fontSize: 10.5, color: Color(0xFF9E9E9E)),
                 textAlign: TextAlign.center,
               ),
@@ -529,7 +633,7 @@ class _DetalleCompraScreenState extends State<DetalleCompraScreen> {
   String _formatFecha(String raw) {
     if (raw.isEmpty) return '—';
     try {
-      final dt = DateTime.parse(raw);
+      final dt = DateTime.parse(raw).toLocal();
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) { return raw; }
   }
@@ -769,8 +873,8 @@ class _DatosPedidoSheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('PayPal Sandbox', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
-                        Text('Pago seguro con tu cuenta de prueba', style: TextStyle(color: Color(0xFFB3C4E8), fontSize: 11)),
+                        Text('PayPal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                        Text('Pago seguro y confiable con tu cuenta', style: TextStyle(color: Color(0xFFB3C4E8), fontSize: 11)),
                       ],
                     ),
                   ),
@@ -794,7 +898,7 @@ class _DatosPedidoSheet extends StatelessWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Al presionar "Pagar con PayPal" se abrirá la página de inicio de sesión de PayPal Sandbox.',
+                      'Al presionar "Pagar con PayPal" se abrirá la página de inicio de sesión de PayPal.',
                       style: TextStyle(fontSize: 11.5, color: Color(0xFF003087), height: 1.4),
                     ),
                   ),
