@@ -123,6 +123,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
         onCarrito: () async {
           Navigator.pop(context);
           await Navigator.push(context, MaterialPageRoute(builder: (_) => const CarritoScreen()));
+          _cargarProductos();
           _actualizarCarrito();
         },
         onLogout: () {
@@ -169,6 +170,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
                 icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
                 onPressed: () async {
                   await Navigator.push(context, MaterialPageRoute(builder: (_) => const CarritoScreen()));
+                  _cargarProductos();
                   _actualizarCarrito();
                 },
               ),
@@ -285,7 +287,10 @@ class _ProductosScreenState extends State<ProductosScreen> {
                               itemCount: _productos.length,
                               itemBuilder: (_, i) => _ProductoCard(
                                 producto: _productos[i],
-                                onCartUpdated: _actualizarCarrito,
+                                onCartUpdated: () {
+                                  _cargarProductos();
+                                  _actualizarCarrito();
+                                },
                               ),
                             ),
                     ),

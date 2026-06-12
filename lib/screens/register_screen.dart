@@ -307,7 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
   String? _validateTelefono(String? v) {
     if (v == null || v.trim().isEmpty) return 'El teléfono es obligatorio';
-    if (!RegExp(r'^\d{10}$').hasMatch(v.trim())) return 'Debe tener 10 dígitos';
+    if (!RegExp(r'^09\d{8}$').hasMatch(v.trim())) return 'Debe empezar con 09 y tener 10 dígitos';
     return null;
   }
   String? _validateDireccion(String? v) {
