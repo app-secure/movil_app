@@ -16,7 +16,7 @@ class ApiService {
       _apiBaseUrl = customUrl;
       return customUrl;
     }
-    const defaultUrl = 'http://10.79.9.56:5020';
+    const defaultUrl = 'http://10.175.119.60';
     _apiBaseUrl = defaultUrl;
     return defaultUrl;
   }
