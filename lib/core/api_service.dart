@@ -16,7 +16,7 @@ class ApiService {
       _apiBaseUrl = customUrl;
       return customUrl;
     }
-    const defaultUrl = 'http://192.168.100.21:5020';
+    const defaultUrl = 'http://10.79.9.56:5020';
     _apiBaseUrl = defaultUrl;
     return defaultUrl;
   }
@@ -74,7 +74,10 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getEstadoDB() async {
-    final res = await _get('/api/test-db');
+    final baseUrl = await getApiBaseUrl();
+    final res = await http
+        .get(Uri.parse('$baseUrl/api/test-db'), headers: _headers())
+        .timeout(const Duration(seconds: 5));
     if (res.statusCode == 200) return jsonDecode(res.body);
     throw 'Error al verificar estado de la base de datos';
   }
@@ -343,11 +346,7 @@ class ApiService {
     Map<String, dynamic> body,
   ) async {
     final token = await getToken();
-    final res = await _post(
-      '/api/pagos/paypal/crear',
-      body,
-      token: token,
-    );
+    final res = await _post('/api/pagos/paypal/crear', body, token: token);
     final data = jsonDecode(res.body);
     if (res.statusCode == 200 || res.statusCode == 201) return data;
     throw data['mensaje'] ?? 'Error al iniciar pago con PayPal';
@@ -367,14 +366,12 @@ class ApiService {
     String payerId,
   ) async {
     final tokenSession = await getToken();
-    var path = '/api/pagos/paypal/success?token=$token&PayerID=$payerId&json=true';
+    var path =
+        '/api/pagos/paypal/success?token=$token&PayerID=$payerId&json=true';
     if (numeroFactura != null && numeroFactura > 0) {
       path += '&numeroFactura=$numeroFactura';
     }
-    final res = await _get(
-      path,
-      token: tokenSession,
-    );
+    final res = await _get(path, token: tokenSession);
     final data = jsonDecode(res.body);
     if (res.statusCode == 200) return data;
     throw data['mensaje'] ?? 'Error al confirmar pago con PayPal';
