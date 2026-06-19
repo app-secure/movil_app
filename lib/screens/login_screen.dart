@@ -42,10 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
         data['email'] ?? '',
         data['rol'] ?? 'USUARIO',
       );
-      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AuthWrapper()),
+        createRoute(const AuthWrapper()),
       );
     } catch (e) {
       setState(() { _error = e.toString(); });
@@ -177,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text('¿No tienes cuenta? ', style: TextStyle(color: Colors.white.withValues(alpha:0.75), fontSize: 13)),
                       GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                        onTap: () => Navigator.push(context, createRoute(const RegisterScreen())),
                         child: const Text('Regístrate', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800, decoration: TextDecoration.underline, decorationColor: Colors.white)),
                       ),
                     ],

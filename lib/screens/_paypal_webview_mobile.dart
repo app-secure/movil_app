@@ -180,15 +180,6 @@ class _PaypalWebViewMobileState extends State<PaypalWebViewMobile> {
               ]),
             ),
           ),
-          const SizedBox(width: 10),
-          Text(
-            'Compra #${widget.numeroFactura}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
         ]),
         actions: [
           if (_loading)

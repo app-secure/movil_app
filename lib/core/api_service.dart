@@ -7,6 +7,10 @@ import 'constants.dart';
 
 class ApiService {
   static String? _apiBaseUrl;
+  static List<dynamic>? _cachedProductos;
+
+  static List<dynamic>? getCachedProductos() => _cachedProductos;
+  static void clearProductsCache() => _cachedProductos = null;
 
   static Future<String> getApiBaseUrl() async {
     if (_apiBaseUrl != null) return _apiBaseUrl!;
@@ -16,7 +20,7 @@ class ApiService {
       _apiBaseUrl = customUrl;
       return customUrl;
     }
-    const defaultUrl = 'http://10.175.119.60';
+    const defaultUrl = 'https://crazed-italics-wilt.ngrok-free.dev';
     _apiBaseUrl = defaultUrl;
     return defaultUrl;
   }
@@ -202,10 +206,17 @@ class ApiService {
 
   // ── Productos ─────────────────────────────────────────────────────
 
-  static Future<List<dynamic>> getProductos() async {
+  static Future<List<dynamic>> getProductos({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedProductos != null && _cachedProductos!.isNotEmpty) {
+      return _cachedProductos!;
+    }
     final token = await getToken();
     final res = await _get('/api/productos', token: token);
-    if (res.statusCode == 200) return jsonDecode(res.body);
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body) as List<dynamic>;
+      _cachedProductos = data;
+      return data;
+    }
     throw 'Error al cargar productos';
   }
 

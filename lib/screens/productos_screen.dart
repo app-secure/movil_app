@@ -60,25 +60,48 @@ class _ProductosScreenState extends State<ProductosScreen> {
   }
 
   Future<void> _cargarProductos() async {
+    final cached = ApiService.getCachedProductos();
+    if (cached != null && cached.isNotEmpty) {
+      _applyProductsData(cached);
+      setState(() { _loading = false; _error = null; });
+      _cargarProductosSilencioso();
+      return;
+    }
+
     setState(() { _loading = true; _error = null; });
     try {
       final data = await ApiService.getProductos();
-      final conStock = data.where((p) => (p['stock'] ?? 0) > 0).toList();
-      final cats = conStock
-          .map((p) => (p['categoria'] ?? '').toString().trim())
-          .where((c) => c.isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort();
-      setState(() {
-        _todosProductos = conStock;
-        _categorias = cats;
-      });
-      _filtrar();
+      _applyProductsData(data);
     } catch (e) {
       setState(() { _error = e.toString(); });
     } finally {
       setState(() { _loading = false; });
+    }
+  }
+
+  void _applyProductsData(List<dynamic> data) {
+    final conStock = data.where((p) => (p['stock'] ?? 0) > 0).toList();
+    final cats = conStock
+        .map((p) => (p['categoria'] ?? '').toString().trim())
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    setState(() {
+      _todosProductos = conStock;
+      _categorias = cats;
+    });
+    _filtrar();
+  }
+
+  Future<void> _cargarProductosSilencioso() async {
+    try {
+      final data = await ApiService.getProductos(forceRefresh: true);
+      if (mounted) {
+        _applyProductsData(data);
+      }
+    } catch (_) {
+      // Fallback silently when background update fails (e.g. offline)
     }
   }
 
@@ -114,15 +137,15 @@ class _ProductosScreenState extends State<ProductosScreen> {
         cartCount: _cartCount,
         onMisCompras: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MisComprasScreen()));
+          Navigator.push(context, createRoute(const MisComprasScreen()));
         },
         onPerfil: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const PerfilScreen()));
+          Navigator.push(context, createRoute(const PerfilScreen()));
         },
         onCarrito: () async {
           Navigator.pop(context);
-          await Navigator.push(context, MaterialPageRoute(builder: (_) => const CarritoScreen()));
+          await Navigator.push(context, createRoute(const CarritoScreen()));
           _cargarProductos();
           _actualizarCarrito();
         },
@@ -169,7 +192,7 @@ class _ProductosScreenState extends State<ProductosScreen> {
                 tooltip: 'Mi carrito',
                 icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
                 onPressed: () async {
-                  await Navigator.push(context, MaterialPageRoute(builder: (_) => const CarritoScreen()));
+                  await Navigator.push(context, createRoute(const CarritoScreen()));
                   _cargarProductos();
                   _actualizarCarrito();
                 },
@@ -615,8 +638,8 @@ class _ProductoCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () async {
-        await Navigator.push(context, MaterialPageRoute(
-          builder: (_) => DetalleProductoScreen(idProducto: producto['idProducto']),
+        await Navigator.push(context, createRoute(
+          DetalleProductoScreen(idProducto: producto['idProducto']),
         ));
         onCartUpdated();
       },

@@ -1,27 +1,14 @@
 import 'package:flutter/material.dart';
 import 'core/constants.dart';
-import 'core/api_service.dart';
-import 'screens/login_screen.dart';
-import 'screens/auth_wrapper.dart';
+import 'screens/splash_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final loggedIn = await ApiService.isLoggedIn();
-  bool puedeEntrar = false;
-  if (loggedIn) {
-    final activo = await ApiService.isUsuarioActivo();
-    if (activo) {
-      puedeEntrar = true;
-    } else {
-      await ApiService.clearSession();
-    }
-  }
-  runApp(MyApp(startLoggedIn: puedeEntrar));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool startLoggedIn;
-  const MyApp({super.key, required this.startLoggedIn});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +20,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
-      home: startLoggedIn ? const AuthWrapper() : const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

@@ -225,12 +225,6 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
               ]),
             ),
           ),
-          const SizedBox(width: 10),
-          Text(
-            'Compra #${widget.numeroFactura}',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
-          ),
         ]),
         actions: [
           if (!kIsWeb && _loading)
@@ -380,28 +374,6 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
             },
           ),
 
-          const SizedBox(height: 20),
-
-          // Compra info
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(children: [
-              const Icon(Icons.receipt_long_outlined,
-                  color: Color(0xFF003087), size: 16),
-              const SizedBox(width: 8),
-              Text(
-                'Compra #${widget.numeroFactura}',
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF003087)),
-              ),
-            ]),
-          ),
         ]),
       ),
     );
